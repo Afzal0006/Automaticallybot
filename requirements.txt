@@ -1,0 +1,27 @@
+# generate_requirements.py
+
+requirements = [
+    "# Telegram Bot Libraries",
+    "python-telegram-bot==20.6",
+    "pyrogram==2.0.106",
+    "tgcrypto==1.2.5",
+    "",
+    "# Database",
+    "pymongo==4.5.0",
+    "",
+    "# Async HTTP requests",
+    "aiohttp==3.8.5",
+    "",
+    "# Environment variables",
+    "python-dotenv==1.0.0",
+    "",
+    "# Optional utilities",
+    "pyaes==1.6.1",
+    "pysocks==1.7.1"
+]
+
+with open("requirements.txt", "w") as file:
+    for line in requirements:
+        file.write(line + "\n")
+
+print("✅ requirements.txt file successfully created!")
