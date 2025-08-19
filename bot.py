@@ -5,7 +5,7 @@ from pyrogram import Client, filters
 # ==== CONFIG ====
 API_ID = 24024383
 API_HASH = "e4defcf520c9333e56196378440e990c"
-BOT_TOKEN = "8409625869:AAEpysnBH7MXtL508kxa5XfSpNkvK8jlvFg"
+BOT_TOKEN = "8411607342:AAHSDSB98MDYeuYMZUk6nHqKtZy2zquhVig"
 
 app = Client("TonPriceBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
