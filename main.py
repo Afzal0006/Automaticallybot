@@ -5,7 +5,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 # ===== CONFIG =====
 BOT_TOKEN = "8232198206:AAHz2GHiKWQAcMKTF-Iz5Nl_Haatsi4ol_o"
 OWNER_ID = 6998916494
-CHANNEL_ID = -1002161414780  # Aapke channel ka ID
+CHANNEL_ID = -1002161414780  # Channel ID
 
 # TON Price API
 def get_ton_price():
@@ -21,7 +21,7 @@ async def ton_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # /convert command
 async def convert_ton(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        amount = float(context.args[0])  # Example: /convert 10
+        amount = float(context.args[0])
         price = get_ton_price()
         usd_value = amount * price
         await update.message.reply_text(f"🔄 {amount} TON = **${usd_value:.2f} USD**")
@@ -52,12 +52,13 @@ def main():
     app.add_handler(CommandHandler("convert", convert_ton))
     app.add_handler(CommandHandler("afz", afz))
 
-    # ✅ Yaha job schedule karne ka sahi tarika
-    async def start_jobs(application: Application):
+    # ✅ post_init hook me job_queue schedule karo
+    async def post_init(application: Application):
         application.job_queue.run_repeating(send_price_to_channel, interval=30, first=5)
 
-    # run_polling ke andar jobs init ho jayenge
-    app.run_polling(after_startup=start_jobs)
+    app.post_init = post_init
+
+    app.run_polling()
 
 if __name__ == "__main__":
     main()
