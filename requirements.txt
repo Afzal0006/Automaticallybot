@@ -1,4 +1,4 @@
-python-telegram-bot==20.6
+python-telegram-bot[webhooks]==20.6
 aiohttp==3.8.5
 matplotlib==3.7.2
 Pillow==10.2.0
