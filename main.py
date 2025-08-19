@@ -15,7 +15,7 @@ def get_ton_price():
 # /ton command
 async def ton_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
     price = get_ton_price()
-    await update.message.reply_text(f"💎 TON Current Price: **${price}**")
+    await update.message.reply_text(f"💎 TON Current Price: {price}$")
 
 # /convert command
 async def convert_ton(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -33,7 +33,7 @@ async def afz(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return await update.message.reply_text("⛔ Only owner can use this command!")
 
     price = get_ton_price()
-    await update.message.reply_text(f"👑 Owner Command → TON Price: **${price}**")
+    await update.message.reply_text(f"→ TON Price: ${price}$")
 
 # MAIN
 def main():
