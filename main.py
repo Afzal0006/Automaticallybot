@@ -34,7 +34,7 @@ async def afz(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return await update.message.reply_text("⛔ Only owner can use this command!")
 
     price = get_ton_price()
-    await update.message.reply_text(f"→ TON Price: ${price}")
+    await update.message.reply_text(f"👑 Owner Command → TON Price: ${price}")
 
 # 🔄 Function jo channel me har 30 sec me chalega
 async def send_price_to_channel(context: ContextTypes.DEFAULT_TYPE):
@@ -52,9 +52,11 @@ def main():
     app.add_handler(CommandHandler("convert", convert_ton))
     app.add_handler(CommandHandler("afz", afz))
 
-    # Auto-scheduler → har 30 sec me run karega
-    app.job_queue.run_repeating(send_price_to_channel, interval=30, first=5)
+    # ✅ Job queue ko run_polling ke lifecycle ke andar add karo
+    async def post_init(application: Application):
+        application.job_queue.run_repeating(send_price_to_channel, interval=30, first=5)
 
+    app.post_init = post_init
     app.run_polling()
 
 if __name__ == "__main__":
