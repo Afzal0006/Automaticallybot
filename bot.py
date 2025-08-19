@@ -1,12 +1,14 @@
+import os
 import aiohttp
-import asyncio
 import datetime
 import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw, ImageFont
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-BOT_TOKEN = "8411607342:AAHSDSB98MDYeuYMZUk6nHqKtZy2zquhVig"  # yaha apna token daalna
+# ==== CONFIG ====
+BOT_TOKEN = "8409625869:AAEpysnBH7MXtL508kxa5XfSpNkvK8jlvFg"
+APP_URL = os.getenv("APP_URL", "https://writerbot-26c0f8ef84aa.herokuapp.com")  # apna Heroku app url
 
 # ==== Fetch TON Data ====
 async def fetch_ton_data():
@@ -57,12 +59,19 @@ async def ton_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     path = create_card(price, daily, weekly, sparkline)
     await update.message.reply_photo(photo=open(path, "rb"), caption="📊 Toncoin Price Update")
 
-# ==== Bot Start ====
+# ==== Main ====
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("ton", ton_handler))
-    print("🤖 Bot running...")
-    app.run_polling()
+
+    # Webhook setup for Heroku
+    port = int(os.environ.get("PORT", 8443))
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=port,
+        url_path=BOT_TOKEN,
+        webhook_url=f"{APP_URL}/{BOT_TOKEN}"
+    )
 
 if __name__ == "__main__":
     main()
