@@ -5,6 +5,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 # ===== CONFIG =====
 BOT_TOKEN = "8232198206:AAHz2GHiKWQAcMKTF-Iz5Nl_Haatsi4ol_o"
 OWNER_ID = 6998916494
+CHANNEL_ID = -1002161414780  # Aapke channel ka ID
 
 # TON Price API
 def get_ton_price():
@@ -35,6 +36,14 @@ async def afz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     price = get_ton_price()
     await update.message.reply_text(f"→ TON Price: ${price}")
 
+# 🔄 Function jo channel me har 30 sec me chalega
+async def send_price_to_channel(context: ContextTypes.DEFAULT_TYPE):
+    price = get_ton_price()
+    await context.bot.send_message(
+        chat_id=CHANNEL_ID,
+        text=f"📊 TON Current Price: **${price}**"
+    )
+
 # MAIN
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
@@ -43,7 +52,9 @@ def main():
     app.add_handler(CommandHandler("convert", convert_ton))
     app.add_handler(CommandHandler("afz", afz))
 
-    # ye line event loop ko safe tarike se handle karti hai
+    # Auto-scheduler → har 30 sec me run karega
+    app.job_queue.run_repeating(send_price_to_channel, interval=30, first=5)
+
     app.run_polling()
 
 if __name__ == "__main__":
