@@ -1,64 +1,67 @@
-import requests
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram import Update, InlineQueryResultArticle, InputTextMessageContent
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    InlineQueryHandler,
+    filters,
+)
+import uuid
 
-# ===== CONFIG =====
-BOT_TOKEN = "8232198206:AAHz2GHiKWQAcMKTF-Iz5Nl_Haatsi4ol_o"
-OWNER_ID = 6998916494
-CHANNEL_ID = -1002161414780  # Channel ID
+# ===== Bot Token =====
+BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
 
-# TON Price API
-def get_ton_price():
-    url = "https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd"
-    res = requests.get(url).json()
-    return res["the-open-network"]["usd"]
-
-# /ton command
-async def ton_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    price = get_ton_price()
-    await update.message.reply_text(f"💎 TON Current Price: ${price}")
-
-# /convert command
-async def convert_ton(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        amount = float(context.args[0])
-        price = get_ton_price()
-        usd_value = amount * price
-        await update.message.reply_text(f"🔄 {amount} TON = **${usd_value:.2f} USD**")
-    except:
-        await update.message.reply_text("❌ Format: `/convert 10`")
-
-# /afz command (Owner only)
-async def afz(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != OWNER_ID:
-        return await update.message.reply_text("⛔ Only owner can use this command!")
-
-    price = get_ton_price()
-    await update.message.reply_text(f"👑 Owner Command → TON Price: ${price}")
-
-# 🔄 Har 30 sec me price bhejne wala function
-async def send_price_to_channel(context: ContextTypes.DEFAULT_TYPE):
-    price = get_ton_price()
-    await context.bot.send_message(
-        chat_id=CHANNEL_ID,
-        text=f"📊 TON Current Price: **${price}**"
+# ===== Start Command =====
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Hello! I am your Calculator Bot.\n"
+        "Send me a math expression like:\n"
+        "`12*5` for 12×5\n"
+        "`10/2` for 10÷2\n"
+        "I support +, -, *, /, and parentheses.\n"
+        "You can also use me inline in any chat: @YourBot 12*5"
     )
 
-# MAIN
-def main():
-    app = Application.builder().token(BOT_TOKEN).build()
+# ===== Handle Normal Messages =====
+async def calculate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    expr = update.message.text
+    expr_display = expr.replace("*", "×").replace("/", "÷")
+    try:
+        result = eval(expr.replace("×", "*").replace("÷", "/"))
+        await update.message.reply_text(f"{expr_display} = {result}")
+    except Exception:
+        await update.message.reply_text("Invalid expression! Please send a valid math formula.")
 
-    app.add_handler(CommandHandler("ton", ton_price))
-    app.add_handler(CommandHandler("convert", convert_ton))
-    app.add_handler(CommandHandler("afz", afz))
+# ===== Handle Inline Queries =====
+async def inline_calc(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.inline_query.query
+    if not query:
+        return
 
-    # ✅ post_init hook me job_queue schedule karo
-    async def post_init(application: Application):
-        application.job_queue.run_repeating(send_price_to_channel, interval=30, first=5)
+    expr_display = query.replace("*", "×").replace("/", "÷")
+    try:
+        result = eval(query.replace("×", "*").replace("÷", "/"))
+        answer_text = f"{expr_display} = {result}"
+    except Exception:
+        answer_text = "Invalid expression!"
 
-    app.post_init = post_init
+    results = [
+        InlineQueryResultArticle(
+            id=str(uuid.uuid4()),
+            title="Calculator Result",
+            input_message_content=InputTextMessageContent(answer_text),
+            description=answer_text
+        )
+    ]
+    await update.inline_query.answer(results, cache_time=0)
 
-    app.run_polling()
+# ===== Main Application =====
+app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-if __name__ == "__main__":
-    main()
+app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, calculate))
+app.add_handler(InlineQueryHandler(inline_calc))
+
+print("Bot is running...")
+app.run_polling()
