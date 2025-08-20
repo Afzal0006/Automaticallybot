@@ -10,7 +10,7 @@ from telegram.ext import (
 import uuid
 
 # ===== Bot Token =====
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
+BOT_TOKEN = "8311824260:AAFeBQwRhoEspYVMOkIaOwKsuuXV4Qfx6JE"
 
 # ===== Start Command =====
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
