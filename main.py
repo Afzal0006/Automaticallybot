@@ -1,67 +1,72 @@
-from telegram import Update, InlineQueryResultArticle, InputTextMessageContent
-from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    ContextTypes,
-    MessageHandler,
-    InlineQueryHandler,
-    filters,
-)
-import uuid
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatPermissions
+from telegram.ext import Application, CommandHandler, ChatMemberHandler, CallbackQueryHandler, ContextTypes
+import logging
 
-# ===== Bot Token =====
-BOT_TOKEN = "8311824260:AAFeBQwRhoEspYVMOkIaOwKsuuXV4Qfx6JE"
+logging.basicConfig(level=logging.INFO)
 
-# ===== Start Command =====
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "Hello! I am your Calculator Bot.\n"
-        "Send me a math expression like:\n"
-        "`12*5` for 12×5\n"
-        "`10/2` for 10÷2\n"
-        "I support +, -, *, /, and parentheses.\n"
-        "You can also use me inline in any chat: @YourBot 12*5"
-    )
+TOKEN = "8311824260:AAFeBQwRhoEspYVMOkIaOwKsuuXV4Qfx6JE"
 
-# ===== Handle Normal Messages =====
-async def calculate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    expr = update.message.text
-    expr_display = expr.replace("*", "×").replace("/", "÷")
-    try:
-        result = eval(expr.replace("×", "*").replace("÷", "/"))
-        await update.message.reply_text(f"{expr_display} = {result}")
-    except Exception:
-        await update.message.reply_text("Invalid expression! Please send a valid math formula.")
+REQUIRED_TEXT = "@UNIH0"
 
-# ===== Handle Inline Queries =====
-async def inline_calc(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.inline_query.query
-    if not query:
-        return
+# ✅ Jab user group join kare
+async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    for member in update.chat_member.new_chat_members:
+        bio = (await context.bot.get_chat(member.id)).bio or ""
 
-    expr_display = query.replace("*", "×").replace("/", "÷")
-    try:
-        result = eval(query.replace("×", "*").replace("÷", "/"))
-        answer_text = f"{expr_display} = {result}"
-    except Exception:
-        answer_text = "Invalid expression!"
+        if REQUIRED_TEXT not in bio:
+            # mute user
+            await context.bot.restrict_chat_member(
+                chat_id=update.chat_member.chat.id,
+                user_id=member.id,
+                permissions=ChatPermissions(can_send_messages=False)
+            )
 
-    results = [
-        InlineQueryResultArticle(
-            id=str(uuid.uuid4()),
-            title="Calculator Result",
-            input_message_content=InputTextMessageContent(answer_text),
-            description=answer_text
+            # send warning with button
+            keyboard = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("✅ Done", callback_data=f"checkbio_{member.id}")]]
+            )
+            await context.bot.send_message(
+                chat_id=update.chat_member.chat.id,
+                text="Please use @UNIH0 this in your Bio",
+                reply_markup=keyboard
+            )
+
+
+# ✅ Jab user Done button dabaye
+async def check_bio(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    user_id = int(query.data.split("_")[1])
+    await query.answer()
+
+    bio = (await context.bot.get_chat(user_id)).bio or ""
+
+    if REQUIRED_TEXT in bio:
+        # unmute user
+        await context.bot.restrict_chat_member(
+            chat_id=query.message.chat.id,
+            user_id=user_id,
+            permissions=ChatPermissions(can_send_messages=True,
+                                        can_send_media_messages=True,
+                                        can_send_polls=True,
+                                        can_send_other_messages=True,
+                                        can_add_web_page_previews=True,
+                                        can_change_info=False,
+                                        can_invite_users=True,
+                                        can_pin_messages=False)
         )
-    ]
-    await update.inline_query.answer(results, cache_time=0)
+        await query.edit_message_text("✅ Verified! User unmuted.")
+    else:
+        await query.answer("❌ Bio me @UNIH0 nahi mila!", show_alert=True)
 
-# ===== Main Application =====
-app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, calculate))
-app.add_handler(InlineQueryHandler(inline_calc))
+def main():
+    app = Application.builder().token(TOKEN).build()
 
-print("Bot is running...")
-app.run_polling()
+    app.add_handler(ChatMemberHandler(new_member, ChatMemberHandler.CHAT_MEMBER))
+    app.add_handler(CallbackQueryHandler(check_bio, pattern=r"checkbio_\d+"))
+
+    app.run_polling()
+
+
+if __name__ == "__main__":
+    main()
